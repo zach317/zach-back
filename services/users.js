@@ -19,6 +19,10 @@ const userServices = {
       `SELECT * FROM user WHERE username='${username}' AND password='${password}'`
     );
   },
+
+  getUserinfo: (userId) => {
+    return sqlQuery(`SELECT * FROM user WHERE id='${userId}'`);
+  },
 };
 
 module.exports = userServices;
