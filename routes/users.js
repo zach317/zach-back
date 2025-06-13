@@ -12,5 +12,7 @@ router.post("/register", userController.register);
 router.post("/check-username", userController.checkUsername);
 router.post("/login", userController.login);
 router.get("/get-userinfo", userController.getUserInfo);
+router.post('/update-userinfo', userController.updateUserInfo)
+
 
 module.exports = router;

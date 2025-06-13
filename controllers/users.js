@@ -1,12 +1,13 @@
 const userServices = require("../services/users");
 const JWT = require("../utils/jwt");
 const { selectSql } = require("../utils/helpers");
-const dayjs = require('dayjs')
-
+const dayjs = require("dayjs");
 
 const userController = {
   register: async (req, res) => {
     try {
+      // 在请求体中添加 create_at 字段，表示注册时间
+      req.body.createAt = dayjs().format("YYYY-MM-DD HH:mm:ss");
       const data = await userServices.register(req.body);
       if (data) {
         res.send({
@@ -74,6 +75,18 @@ const userController = {
         age,
       };
       res.send({ success: true, data: result });
+    } catch (error) {
+      res.status(500).send({ success: false, message: error.message });
+    }
+  },
+
+  updateUserInfo: async (req, res) => {
+    req.body.updateAt = dayjs().format("YYYY-MM-DD HH:mm:ss");
+    try {
+      const data = await userServices.updateUserInfo(req.body);
+      if (data[0]) {
+        res.send({ success: true, message: "更新成功" });
+      }
     } catch (error) {
       res.status(500).send({ success: false, message: error.message });
     }
