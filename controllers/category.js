@@ -182,14 +182,25 @@ const categoryController = {
         // 移动到子级
         newParentId = targetCategory.category_id;
         newLevel = targetCategory.level + 1;
-
-        if (newLevel > 3) {
-          return res.status(400).send({
-            success: false,
-            message: "分类层级不能超过3层",
-          });
-        }
       }
+
+      // 检查拖拽节点及其所有子节点是否会超过层级限制
+      const checkMaxDepth = async (categoryId, currentLevel) => {
+        const children = await categoryServices.hasChildCategories(categoryId);
+        if (children[0].length > 0) {
+          const nextLevel = currentLevel + 1;
+          if (nextLevel > 3) {
+            throw new Error("移动会导致子分类层级超过3层限制");
+          }
+          // 递归检查更深层的子分类
+          for (const child of children[0]) {
+            await checkMaxDepth(child.category_id, nextLevel);
+          }
+        }
+      };
+
+      // 执行层级检查
+      await checkMaxDepth(dragId, newLevel);
 
       const result = await categoryServices.updateCategoryParent({
         categoryId: dragId,

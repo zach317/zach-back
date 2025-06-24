@@ -72,13 +72,20 @@ const categoryServices = {
   },
 
   // 更新分类的父级和层级（用于拖拽排序）
-  updateCategoryParent: ({ categoryId, userId, parentId, level }) => {
+  updateCategoryParent: async ({ categoryId, userId, parentId, level }) => {
     const parentIdValue = parentId ? parentId : "NULL";
-    return sqlQuery(
+
+    // 更新当前分类
+    const result = await sqlQuery(
       `UPDATE category 
        SET parent_id = ${parentIdValue}, level = ${level}
        WHERE category_id = ${categoryId} AND user_id = ${userId}`
     );
+
+    // 递归更新所有子分类的层级
+    await categoryServices.updateChildrenLevel(categoryId, level);
+
+    return result;
   },
 
   // 获取分类的完整路径（用于显示分类层级关系）
@@ -143,6 +150,34 @@ const categoryServices = {
       GROUP BY category_type, level
       ORDER BY category_type, level
     `);
+  },
+
+  // 递归更新子分类的层级
+  updateChildrenLevel: async (parentId, newLevel) => {
+    // 获取所有子分类
+    const children = await sqlQuery(
+      `SELECT category_id FROM category WHERE parent_id = ${parentId}`
+    );
+
+    for (const child of children[0]) {
+      const childNewLevel = newLevel + 1;
+
+      // 检查层级限制
+      if (childNewLevel > 3) {
+        throw new Error("操作会导致分类层级超过3层，无法完成");
+      }
+
+      // 更新子分类层级
+      await sqlQuery(
+        `UPDATE category SET level = ${childNewLevel} WHERE category_id = ${child.category_id}`
+      );
+
+      // 递归更新更深层的子分类
+      await categoryServices.updateChildrenLevel(
+        child.category_id,
+        childNewLevel
+      );
+    }
   },
 };
 
