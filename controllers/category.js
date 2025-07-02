@@ -51,7 +51,7 @@ const categoryController = {
           parentKey
         );
         if (parentCategory[0].length > 0) {
-          parentId = parentCategory[0][0].category_id;
+          parentId = selectSql(parentCategory).category_id;
         }
       }
 
