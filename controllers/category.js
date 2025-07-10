@@ -30,6 +30,31 @@ const categoryController = {
       });
     }
   },
+  getAllCategories: async (req, res) => {
+    const { id: userId } = req.body;
+
+    try {
+      const tree = await getTreeList(userId);
+      let result = { income: [], expense: [] };
+
+      for (let item of tree) {
+        if (item.key.startsWith("income-")) {
+          result.income.push(item);
+        } else if (item.key.startsWith("expense-")) {
+          result.expense.push(item);
+        }
+      }
+      res.send({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      res.status(500).send({
+        success: false,
+        message: error.message,
+      });
+    }
+  },
 
   // 添加分类
   addCategory: async (req, res) => {
