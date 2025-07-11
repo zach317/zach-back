@@ -1,6 +1,7 @@
 const transactionServices = require("../services/transaction");
 const { selectSql } = require("../utils/helpers");
 const dayjs = require("dayjs");
+
 const groupTransactionsByDate = (transactions) => {
   const result = {};
 
@@ -20,7 +21,7 @@ const groupTransactionsByDate = (transactions) => {
     }
 
     const category = {
-      id: tx.category_id,
+      id: tx.categories,
       name: tx.category_name,
       type: tx.type,
     };
@@ -54,11 +55,42 @@ const groupTransactionsByDate = (transactions) => {
 const transactionController = {
   getTransactionList: async (req, res) => {
     const { id: userId } = req.body;
-    const { page, pageSize } = req.query;
+    const {
+      page,
+      pageSize,
+      transactionType: type,
+      amountRange: amount,
+      dateRange,
+      categories,
+      description,
+      tags,
+    } = req.query;
+
+    // 构建筛选条件
+    const filters = {
+      type: type && type !== "all" ? type : null,
+      amount:
+        amount && Array.isArray(amount) && amount.length === 2 ? amount : null,
+      dateRange:
+        dateRange && Array.isArray(dateRange) && dateRange.length === 2
+          ? dateRange
+          : null,
+      categories:
+        categories && Array.isArray(categories) && categories.length > 0
+          ? categories.map((item) => {
+              const match = item.match(/\d+/);
+              return match ? parseInt(match[0], 10) : null;
+            })
+          : null,
+      description: description ? description.trim() : null,
+      tags: tags && Array.isArray(tags) && tags.length > 0 ? tags : null,
+    };
+
     const data = await transactionServices.getTransactionList({
       userId,
       page,
       pageSize,
+      filters,
     });
 
     const formattedData = groupTransactionsByDate(data[0]);
@@ -69,7 +101,7 @@ const transactionController = {
         ...data,
       }));
 
-    const countSql = await transactionServices.countSql(userId);
+    const countSql = await transactionServices.countSql(userId, filters);
     const { total, totalIncome, totalExpense } = selectSql(countSql) || {};
     res.send({
       success: true,
