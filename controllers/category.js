@@ -1,10 +1,10 @@
 const categoryServices = require("../services/category");
-const { buildCategoryTree, selectSql } = require("../utils/helpers");
+const { buildCategoryTree } = require("../utils/helpers");
 const dayjs = require("dayjs");
 
 const getTreeList = async (id, type) => {
   const data = await categoryServices.getCategories(id, type);
-  const categories = data[0];
+  const categories = data;
 
   // 构建树形结构
   return buildCategoryTree(categories);
@@ -76,7 +76,7 @@ const categoryController = {
           parentKey
         );
         if (parentCategory[0].length > 0) {
-          parentId = selectSql(parentCategory).category_id;
+          parentId = parentCategory[0].category_id;
         }
       }
 

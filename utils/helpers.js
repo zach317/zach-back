@@ -1,5 +1,3 @@
-const selectSql = (data) => data?.[0]?.[0];
-
 // 构建树形结构的辅助函数
 function buildCategoryTree(categories) {
   const categoryMap = {};
@@ -54,6 +52,5 @@ function buildCategoryTree(categories) {
 }
 
 module.exports = {
-  selectSql,
   buildCategoryTree,
 };

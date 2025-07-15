@@ -1,8 +1,29 @@
 const mysql = require("mysql2");
 const config = dbConfig();
-const promisePool = mysql.createPool(config).promise();
 
-const sqlQuery = async (sql) => await promisePool.query(sql);
+const pool = mysql.createPool(config).promise();
+
+// 默认单条查询（无事务）
+const sqlQuery = async (sql, params = []) => {
+  const [rows] = await pool.query(sql, params);
+  return rows;
+};
+
+// 提供事务支持
+const withTransaction = async (callback) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const result = await callback(connection);
+    await connection.commit();
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
 
 function dbConfig() {
   return {
@@ -16,5 +37,6 @@ function dbConfig() {
 }
 
 global.sqlQuery = sqlQuery;
+global.withTransaction = withTransaction;
 
-module.exports = sqlQuery;
+module.exports = { sqlQuery, withTransaction };

@@ -1,5 +1,4 @@
 const tagServices = require("../services/tag");
-const { selectSql } = require("../utils/helpers");
 
 // 构建树形结构的辅助函数
 function buildTagTree(categories) {
@@ -56,7 +55,7 @@ function buildTagTree(categories) {
 
 const getTreeList = async (id) => {
   const data = await tagServices.getTags(id);
-  const tags = data[0];
+  const tags = data;
 
   // 构建树形结构
   return buildTagTree(tags);

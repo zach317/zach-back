@@ -1,6 +1,5 @@
 const userServices = require("../services/users");
 const JWT = require("../utils/jwt");
-const { selectSql } = require("../utils/helpers");
 const dayjs = require("dayjs");
 
 const userController = {
@@ -26,7 +25,7 @@ const userController = {
     const { username } = req.body;
     try {
       const data = await userServices.checkUsername(username);
-      const nameRes = selectSql(data);
+      const nameRes = data[0];
       if (!!nameRes) {
         res.send({ success: false, message: "用户名已存在" });
         return;
@@ -41,8 +40,8 @@ const userController = {
     const values = req.body;
     try {
       const data = await userServices.login(values);
-      if (data[0].length) {
-        const { username, id } = data[0][0];
+      if (data.length) {
+        const { username, id } = data[0];
         const result = {
           username,
           id,
@@ -62,7 +61,7 @@ const userController = {
     const { id: userId } = req.body;
     try {
       const data = await userServices.getUserinfo(userId);
-      const { username, id, gender, birth, nickname } = selectSql(data);
+      const { username, id, gender, birth, nickname } = data[0];
       const birthday = dayjs(birth).valueOf();
       const today = dayjs().valueOf();
       const age = Math.floor(parseInt((today - birthday) / 1000) / 86400 / 365);
@@ -84,7 +83,7 @@ const userController = {
     req.body.updateAt = dayjs().format("YYYY-MM-DD HH:mm:ss");
     try {
       const data = await userServices.updateUserInfo(req.body);
-      if (data[0]) {
+      if (data) {
         res.send({ success: true, message: "更新成功" });
       }
     } catch (error) {
