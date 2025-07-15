@@ -1,5 +1,4 @@
 const transactionServices = require("../services/transaction");
-const { selectSql } = require("../utils/helpers");
 const dayjs = require("dayjs");
 
 const groupTransactionsByDate = (transactions) => {
@@ -21,18 +20,26 @@ const groupTransactionsByDate = (transactions) => {
     }
 
     const category = {
-      id: tx.categories,
+      key: `${tx.type}-${tx.category_id}`,
       name: tx.category_name,
       type: tx.type,
     };
 
     const amount = Number(tx.amount);
 
+    // 处理 tags：兼容 null、JSON 字符串、已解析对象
+    let tags = [];
+    try {
+      tags = typeof tx.tags === "string" ? JSON.parse(tx.tags) : tx.tags || [];
+    } catch {
+      tags = [];
+    }
+
     result[date].transactions.push({
       id: tx.transaction_id,
       amount,
       category,
-      tags: tx.tags ? tx.tags.split(", ") : [],
+      tags,
       note: tx.description,
       date,
       time,
@@ -93,7 +100,7 @@ const transactionController = {
       filters,
     });
 
-    const formattedData = groupTransactionsByDate(data[0]);
+    const formattedData = groupTransactionsByDate(data);
     const sortedArray = Object.entries(formattedData)
       .sort((a, b) => dayjs(b[0]).unix() - dayjs(a[0]).unix()) // 日期倒序
       .map(([date, data]) => ({
@@ -102,7 +109,7 @@ const transactionController = {
       }));
 
     const countSql = await transactionServices.countSql(userId, filters);
-    const { total, totalIncome, totalExpense } = selectSql(countSql) || {};
+    const { total, totalIncome, totalExpense } = countSql[0] || {};
     res.send({
       success: true,
       data: sortedArray,
@@ -113,6 +120,107 @@ const transactionController = {
         balance: parseFloat((totalIncome - totalExpense).toFixed(2)),
       },
     });
+  },
+
+  addTransaction: async (req, res) => {
+    try {
+      const {
+        id: userId,
+        type,
+        amount,
+        date: transactionDate,
+        description,
+        category,
+        tags,
+      } = req.body;
+      const createDate = dayjs().format("YYYY-MM-DD HH:mm:ss");
+      // 从 category.key 中提取 category_id
+      const categoryId = parseInt(category.key.split("-")[1]);
+
+      const transactionId = await transactionServices.addTransaction({
+        userId,
+        type,
+        amount,
+        transactionDate,
+        description,
+        categoryId,
+        tags,
+        createDate,
+      });
+
+      res.send({
+        success: true,
+        message: "创建成功",
+      });
+    } catch (error) {
+      res.status(500).send({
+        success: false,
+        message: error.message,
+      });
+    }
+  },
+
+  updateTransaction: async (req, res) => {
+    try {
+      const {
+        id: userId,
+        type,
+        amount,
+        date: transactionDate,
+        description,
+        category,
+        tags,
+        transactionId,
+      } = req.body;
+      const updateDate = dayjs().format("YYYY-MM-DD HH:mm:ss");
+      // 从 category.key 中提取 category_id
+      const categoryId = parseInt(category.key.split("-")[1]);
+      await transactionServices.updateTransaction({
+        userId,
+        type,
+        amount,
+        transactionDate,
+        description,
+        categoryId,
+        tags,
+        updateDate,
+        transactionId,
+      });
+
+      res.send({
+        success: true,
+        message: "更新成功",
+      });
+    } catch (error) {
+      res.status(500).send({
+        success: false,
+        message: error.message,
+      });
+    }
+  },
+
+  deleteTransaction: async (req, res) => {
+    try {
+      const { id: userId, transactionId } = req.body;
+
+      if (!transactionId || !userId) {
+        return res.status(400).send({ success: false, message: "缺少参数" });
+      }
+
+      await transactionServices.deleteTransaction({
+        transactionId,
+        userId,
+      });
+      res.send({
+        success: true,
+        message: "删除成功",
+      });
+    } catch (error) {
+      res.status(500).send({
+        success: false,
+        message: error.message,
+      });
+    }
   },
 };
 

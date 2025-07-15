@@ -51,6 +51,11 @@ function buildCategoryTree(categories) {
   return cleanTree(tree);
 }
 
+function sanitizeParams(params) {
+  return params.map((p) => (p === undefined ? null : p));
+}
+
 module.exports = {
   buildCategoryTree,
+  sanitizeParams,
 };
