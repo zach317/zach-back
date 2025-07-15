@@ -66,7 +66,7 @@ const tagController = {
   addTag: async (req, res) => {
     const { id } = req.body;
     const result = await tagServices.addTag(req.body);
-    if (result[0].affectedRows > 0) {
+    if (result.affectedRows > 0) {
       try {
         const tree = await getTreeList(id);
 
@@ -108,7 +108,7 @@ const tagController = {
   updateTag: async (req, res) => {
     const { id, tagId, name, color } = req.body;
     const result = await tagServices.updateTag({ tagId, name, color });
-    if (result[0].affectedRows > 0) {
+    if (result.affectedRows > 0) {
       try {
         const tree = await getTreeList(id);
 
@@ -134,9 +134,12 @@ const tagController = {
 
     try {
       // 调用递归删除方法
-      const result = await tagServices.deleteTagRecursive(tagId, userId);
+      const result = await withTransaction(async (conn) => {
+        // 递归删除标签及其子标签，并删除关联关系
+        return await tagServices.deleteTagRecursive({ tagId, userId, conn });
+      });
 
-      if (result[0].affectedRows > 0) {
+      if (result.affectedRows > 0) {
         const tree = await getTreeList(userId);
         res.send({
           success: true,

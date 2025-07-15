@@ -54,21 +54,53 @@ const categoryServices = {
   },
 
   // 递归删除分类及其所有子分类
-  deleteCategoryRecursive: async (categoryId, userId) => {
-    // 先获取所有子分类
-    const children = await sqlQuery(
-      `SELECT category_id FROM category WHERE parent_id = ${categoryId} AND user_id = ${userId}`
+  // 删除当前分类及所有子分类，同时删除对应交易记录和标签
+  deleteCategoryRecursive: async (categoryId, userId, conn) => {
+    // 1. 查询该分类下所有交易
+    const [transactions] = await conn.execute(
+      `SELECT transaction_id FROM transaction WHERE category_id = ? AND user_id = ?`,
+      [categoryId, userId]
     );
 
-    // 递归删除子分类
-    for (const child of children[0]) {
-      await categoryServices.deleteCategoryRecursive(child.category_id, userId);
+    const transactionIds = transactions.map((tx) => tx.transaction_id);
+
+    if (transactionIds.length > 0) {
+      const placeholders = transactionIds.map(() => "?").join(", ");
+
+      // 2. 删除标签关联
+      await conn.execute(
+        `DELETE FROM transaction_tag WHERE transaction_id IN (${placeholders})`,
+        transactionIds
+      );
+
+      // 3. 删除交易记录
+      await conn.execute(
+        `DELETE FROM transaction WHERE transaction_id IN (${placeholders})`,
+        transactionIds
+      );
     }
 
-    // 删除当前分类
-    return sqlQuery(
-      `DELETE FROM category WHERE category_id = ${categoryId} AND user_id = ${userId}`
+    // 4. 查询所有子分类
+    const [children] = await conn.execute(
+      `SELECT category_id FROM category WHERE parent_id = ? AND user_id = ?`,
+      [categoryId, userId]
     );
+
+    for (const child of children) {
+      await categoryServices.deleteCategoryRecursive(
+        child.category_id,
+        userId,
+        conn
+      );
+    }
+
+    // 5. 删除当前分类
+    const [deleteResult] = await conn.execute(
+      `DELETE FROM category WHERE category_id = ? AND user_id = ?`,
+      [categoryId, userId]
+    );
+
+    return deleteResult;
   },
 
   // 更新分类的父级和层级（用于拖拽排序）
@@ -85,6 +117,7 @@ const categoryServices = {
     // 递归更新所有子分类的层级
     await categoryServices.updateChildrenLevel(categoryId, level);
 
+    console.log("🚀 ~ updateCategoryParent: ~ result:", result)
     return result;
   },
 
@@ -159,7 +192,7 @@ const categoryServices = {
       `SELECT category_id FROM category WHERE parent_id = ${parentId}`
     );
 
-    for (const child of children[0]) {
+    for (const child of children) {
       const childNewLevel = newLevel + 1;
 
       // 检查层级限制
