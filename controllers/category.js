@@ -90,13 +90,13 @@ const categoryController = {
 
       const result = await categoryServices.addCategory(categoryData);
 
-      if (result[0].affectedRows > 0) {
+      if (result.affectedRows > 0) {
         res.send({
           success: true,
           message: "添加成功",
           data: {
-            category_id: result[0].insertId,
-            key: `${type}-${result[0].insertId}`,
+            category_id: result.insertId,
+            key: `${type}-${result.insertId}`,
           },
         });
       } else {
@@ -124,7 +124,7 @@ const categoryController = {
         categoryType: type,
       });
 
-      if (result[0].affectedRows > 0) {
+      if (result.affectedRows > 0) {
         const tree = await getTreeList(userId, type);
         res.send({
           success: true,
@@ -147,16 +147,17 @@ const categoryController = {
     const { id: userId, key, type } = req.body;
 
     try {
-      // 从key中解析category_id
       const categoryId = key.split("-").pop();
 
-      // 调用递归删除方法
-      const result = await categoryServices.deleteCategoryRecursive(
-        categoryId,
-        userId
-      );
+      const result = await withTransaction(async (conn) => {
+        return await categoryServices.deleteCategoryRecursive(
+          categoryId,
+          userId,
+          conn
+        );
+      });
 
-      if (result[0].affectedRows > 0) {
+      if (result.affectedRows > 0) {
         const tree = await getTreeList(userId, type);
         res.send({
           success: true,
@@ -167,6 +168,7 @@ const categoryController = {
         throw new Error("删除失败，分类不存在或无权限");
       }
     } catch (error) {
+      console.error("❌ 删除分类失败:", error.message);
       res.status(500).send({
         success: false,
         message: error.message,
@@ -191,11 +193,11 @@ const categoryController = {
 
       // 获取目标分类信息
       const dropCategory = await categoryServices.getCategoryById(dropId);
-      if (dropCategory[0].length === 0) {
+      if (dropCategory.length === 0) {
         throw new Error("目标分类不存在");
       }
 
-      const targetCategory = dropCategory[0][0];
+      const targetCategory = dropCategory[0];
       let newParentId = null;
       let newLevel = 1;
 
@@ -211,14 +213,15 @@ const categoryController = {
 
       // 检查拖拽节点及其所有子节点是否会超过层级限制
       const checkMaxDepth = async (categoryId, currentLevel) => {
+        console.log("🚀 ~ checkMaxDepth ~ categoryId:", categoryId)
         const children = await categoryServices.hasChildCategories(categoryId);
-        if (children[0].length > 0) {
+        if (children.length > 0) {
           const nextLevel = currentLevel + 1;
           if (nextLevel > 3) {
             throw new Error("移动会导致子分类层级超过3层限制");
           }
           // 递归检查更深层的子分类
-          for (const child of children[0]) {
+          for (const child of children) {
             await checkMaxDepth(child.category_id, nextLevel);
           }
         }
@@ -234,7 +237,7 @@ const categoryController = {
         level: newLevel,
       });
 
-      if (result[0].affectedRows > 0) {
+      if (result.affectedRows > 0) {
         const tree = await getTreeList(userId, type);
         res.send({
           success: true,

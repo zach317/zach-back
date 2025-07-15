@@ -18,21 +18,29 @@ const tagServices = {
   },
 
   // 递归删除标签及其所有子标签
-  deleteTagRecursive: async (tagId, userId) => {
-    // 先获取所有子标签
-    const children = await sqlQuery(
-      `SELECT tag_id FROM tag WHERE parent_id = ${tagId} AND user_id = ${userId}`
+  deleteTagRecursive: async ({ tagId, userId, conn }) => {
+    // 1. 先查出所有子标签
+    const [children] = await conn.execute(
+      `SELECT tag_id FROM tag WHERE parent_id = ? AND user_id = ?`,
+      [tagId, userId]
     );
+    console.log("🚀 ~ deleteTagRecursive: ~ children:", children);
 
-    // 递归删除子标签
-    for (const child of children[0]) {
-      await tagServices.deleteTagRecursive(child.tag_id, userId);
+    // 2. 递归删除子标签
+    for (const child of children) {
+      await tagServices.deleteTagRecursive(child.tag_id, userId, conn);
     }
 
-    // 删除当前标签
-    return sqlQuery(
-      `DELETE FROM tag WHERE tag_id = ${tagId} AND user_id = ${userId}`
+    // 3. 删除当前标签与交易的关联
+    await conn.execute(`DELETE FROM transaction_tag WHERE tag_id = ?`, [tagId]);
+
+    // 4. 删除当前标签本身
+    const [res] = await conn.execute(
+      `DELETE FROM tag WHERE tag_id = ? AND user_id = ?`,
+      [tagId, userId]
     );
+
+    return res;
   },
 };
 module.exports = tagServices;
