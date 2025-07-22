@@ -1,5 +1,3 @@
-const { register } = require("../controllers/users");
-
 const userServices = {
   register: (body) => {
     const { username, password, gander, birth, nickname, createAt } = body;

@@ -40,7 +40,7 @@ const groupTransactionsByDate = (transactions) => {
       amount,
       category,
       tags,
-      note: tx.description,
+      description: tx.description,
       date,
       time,
       type: tx.type,
