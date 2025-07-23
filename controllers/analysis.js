@@ -100,6 +100,33 @@ const analysisController = {
       });
     }
   },
+
+  getCategoryRank: async (req, res) => {
+    try {
+      const { id: userId } = req.body;
+      const { limit } = req.query;
+      const rows = await analysisServices.getCategoryRank({ userId, limit });
+      const result = { income: [], expense: [] };
+      for (const row of rows) {
+        const { type, name, amount } = row;
+        result[type].push({
+          name,
+          amount: Number(amount),
+          color: generateColor(name),
+        });
+      }
+
+      res.send({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      res.status(500).send({
+        success: false,
+        message: error.message,
+      });
+    }
+  },
 };
 
 module.exports = analysisController;

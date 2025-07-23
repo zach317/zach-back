@@ -33,6 +33,38 @@ const analysisServices = {
     `;
     return await sqlQuery(sql, [userId, type, userId, type]);
   },
+
+  getCategoryRank: async ({ userId, limit = 5 }) => {
+    const sql = `
+    (
+      SELECT 
+        c.category_type AS type,
+        c.category_name AS name,
+        SUM(t.amount) AS amount
+      FROM \`transaction\` t
+      JOIN category c ON t.category_id = c.category_id
+      WHERE t.user_id = ? AND c.category_type = 'income'
+      GROUP BY c.category_id
+      ORDER BY amount DESC
+      LIMIT ?
+    )
+    UNION ALL
+    (
+      SELECT 
+        c.category_type AS type,
+        c.category_name AS name,
+        SUM(t.amount) AS amount
+      FROM \`transaction\` t
+      JOIN category c ON t.category_id = c.category_id
+      WHERE t.user_id = ? AND c.category_type = 'expense'
+      GROUP BY c.category_id
+      ORDER BY amount DESC
+      LIMIT ?
+    )
+  `;
+
+    return await sqlQuery(sql, [userId, limit, userId, limit]);
+  },
 };
 
 module.exports = analysisServices;
