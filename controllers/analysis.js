@@ -1,5 +1,8 @@
 const analysisServices = require("../services/analysis");
 const dayjs = require("dayjs");
+const utc = require("dayjs/plugin/utc");
+
+dayjs.extend(utc);
 
 const generateColor = (() => {
   const colorList = [
@@ -120,6 +123,56 @@ const analysisController = {
         success: true,
         data: result,
       });
+    } catch (error) {
+      res.status(500).send({
+        success: false,
+        message: error.message,
+      });
+    }
+  },
+
+  getMonthAmount: async (req, res) => {
+    try {
+      const today = dayjs();
+      const { id: userId } = req.body;
+      const { year = today.year(), month = today.month() + 1 } = req.query;
+      const targetMonth = dayjs(
+        `${year}-${month.toString().padStart(2, "0")}-01`
+      );
+      const startDate = targetMonth.startOf("month").format("YYYY-MM-DD");
+      const endDate = targetMonth.endOf("month").format("YYYY-MM-DD");
+
+      const rows = await analysisServices.getMonthAmount({
+        userId,
+        startDate,
+        endDate,
+      });
+      const formatted = rows.map((item) => ({
+        ...item,
+        date: dayjs.utc(item.date).local().format("YYYY-MM-DD"),
+      }));
+
+      const amountMap = new Map();
+      formatted.forEach((row) => {
+        const dateKey = dayjs(row.date).local().format("YYYY-MM-DD"); // 修复关键点
+        amountMap.set(dateKey, [
+          dateKey,
+          row.income !== null ? Number(row.income) : null,
+          row.expense !== null ? Number(row.expense) : null,
+        ]);
+      });
+
+      const result = [];
+      let cursor = targetMonth.startOf("month");
+      const lastDay = targetMonth.endOf("month");
+
+      while (cursor.isBefore(lastDay.add(1, "day"))) {
+        const d = cursor.format("YYYY-MM-DD");
+        result.push(amountMap.get(d) || [d, null, null]);
+        cursor = cursor.add(1, "day");
+      }
+
+      res.send({ success: true, data: result });
     } catch (error) {
       res.status(500).send({
         success: false,

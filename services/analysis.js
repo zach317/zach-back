@@ -65,6 +65,22 @@ const analysisServices = {
 
     return await sqlQuery(sql, [userId, limit, userId, limit]);
   },
+
+  getMonthAmount: async ({ userId, startDate, endDate }) => {
+    const sql = `
+    SELECT
+      DATE(t.transaction_date) AS date,
+      SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE NULL END) AS income,
+      SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE NULL END) AS expense
+    FROM \`transaction\` t
+    WHERE t.user_id = ?
+      AND t.transaction_date BETWEEN ? AND ?
+    GROUP BY DATE(t.transaction_date)
+    ORDER BY DATE(t.transaction_date)
+  `;
+
+    return await sqlQuery(sql, [userId, startDate, endDate]);
+  },
 };
 
 module.exports = analysisServices;
