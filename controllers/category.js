@@ -75,7 +75,7 @@ const categoryController = {
         const parentCategory = await categoryServices.getCategoryByKey(
           parentKey
         );
-        if (parentCategory[0].length > 0) {
+        if (parentCategory.length > 0) {
           parentId = parentCategory[0].category_id;
         }
       }
@@ -91,13 +91,11 @@ const categoryController = {
       const result = await categoryServices.addCategory(categoryData);
 
       if (result.affectedRows > 0) {
+        const tree = await getTreeList(userId, type);
         res.send({
           success: true,
           message: "添加成功",
-          data: {
-            category_id: result.insertId,
-            key: `${type}-${result.insertId}`,
-          },
+          data: tree,
         });
       } else {
         throw new Error("添加失败");
@@ -213,7 +211,7 @@ const categoryController = {
 
       // 检查拖拽节点及其所有子节点是否会超过层级限制
       const checkMaxDepth = async (categoryId, currentLevel) => {
-        console.log("🚀 ~ checkMaxDepth ~ categoryId:", categoryId)
+        console.log("🚀 ~ checkMaxDepth ~ categoryId:", categoryId);
         const children = await categoryServices.hasChildCategories(categoryId);
         if (children.length > 0) {
           const nextLevel = currentLevel + 1;
