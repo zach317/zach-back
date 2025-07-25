@@ -6,18 +6,26 @@ dayjs.extend(utc);
 
 const generateColor = (() => {
   const colorList = [
-    "#F56C6C",
-    "#67C23A",
-    "#409EFF",
-    "#E6A23C",
-    "#909399",
-    "#1abc9c",
-    "#9b59b6",
-    "#34495e",
-    "#e67e22",
-    "#e74c3c",
-    "#2ecc71",
-    "#3498db",
+    "#1f77b4", // 亮蓝
+    "#ff7f0e", // 暖橙
+    "#2ca02c", // 草绿
+    "#d62728", // 鲜红
+    "#9467bd", // 紫罗兰
+    "#8c564b", // 棕
+    "#e377c2", // 玫红
+    "#bcbd22", // 黄绿
+    "#17becf", // 青
+
+    "#aec7e8", // 淡蓝
+    "#ffbb78", // 淡橙
+    "#98df8a", // 淡绿
+    "#ff9896", // 淡红
+    "#c5b0d5", // 淡紫
+    "#c49c94", // 淡棕
+    "#f7b6d3", // 淡玫
+    "#c7c7c7", // 淡灰
+    "#dbdb8d", // 淡黄绿
+    "#9edae5", // 淡青
   ];
   const cache = new Map();
   let index = 0;
@@ -92,8 +100,13 @@ const analysisController = {
     try {
       const { id: userId } = req.body;
 
-      const { type = "expense" } = req.query; // 支持收入 or 支出
-      const data = await analysisServices.getCategoryRadio({ userId, type });
+      const { type = "expense", startDate, endDate } = req.query; // 支持收入 or 支出
+      const data = await analysisServices.getCategoryRadio({
+        userId,
+        type,
+        startDate,
+        endDate,
+      });
       const result = buildCategoryTree(data);
       res.send({ success: true, data: result });
     } catch (error) {
@@ -107,7 +120,7 @@ const analysisController = {
   getCategoryRank: async (req, res) => {
     try {
       const { id: userId } = req.body;
-      const { limit } = req.query;
+      const { limit = 8 } = req.query;
       const rows = await analysisServices.getCategoryRank({ userId, limit });
       const result = { income: [], expense: [] };
       for (const row of rows) {

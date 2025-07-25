@@ -13,28 +13,40 @@ const analysisServices = {
     return await sqlQuery(sql, [userId, startDate, endDate]);
   },
 
-  getCategoryRadio: async ({ userId, type }) => {
+  getCategoryRadio: async ({ userId, type, startDate, endDate }) => {
+    const params = [userId, type];
+    let timeCondition = "";
+
+    if (startDate && endDate) {
+      timeCondition = `AND DATE(t.transaction_date) BETWEEN ? AND ?`;
+      params.push(startDate, endDate);
+    }
+
     const sql = `
     SELECT 
-    c.category_id,
-    c.parent_id,
-    c.category_name AS name,
-    c.level,
-    c.category_type,
-    IFNULL(SUM(t.amount), 0) AS amount
+      c.category_id,
+      c.parent_id,
+      c.category_name AS name,
+      c.level,
+      c.category_type,
+      IFNULL(SUM(t.amount), 0) AS amount
     FROM category c
     LEFT JOIN transaction t 
-    ON t.category_id = c.category_id 
-    AND t.user_id = ? 
-    AND t.type = ?
+      ON t.category_id = c.category_id 
+      AND t.user_id = ? 
+      AND t.type = ?
+      ${timeCondition}
     WHERE c.user_id = ?
-    AND c.category_type = ?
+      AND c.category_type = ?
     GROUP BY c.category_id, c.parent_id, c.category_name, c.level, c.category_type
-    `;
-    return await sqlQuery(sql, [userId, type, userId, type]);
+  `;
+
+    params.push(userId, type); // 对应 WHERE c.user_id=? AND c.category_type=?
+
+    return await sqlQuery(sql, params);
   },
 
-  getCategoryRank: async ({ userId, limit = 5 }) => {
+  getCategoryRank: async ({ userId, limit }) => {
     const sql = `
     (
       SELECT 
