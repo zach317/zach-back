@@ -46,36 +46,29 @@ const analysisServices = {
     return await sqlQuery(sql, params);
   },
 
-  getCategoryRank: async ({ userId, limit }) => {
+  getCategoryRank: async ({ userId, limit, type, startDate, endDate }) => {
+    const params = [userId, type];
+
+    let dateCondition = "";
+    if (startDate && endDate) {
+      dateCondition = "AND t.transaction_date BETWEEN ? AND ?";
+      params.push(startDate, endDate);
+    }
+
     const sql = `
-    (
-      SELECT 
-        c.category_type AS type,
-        c.category_name AS name,
-        SUM(t.amount) AS amount
-      FROM \`transaction\` t
-      JOIN category c ON t.category_id = c.category_id
-      WHERE t.user_id = ? AND c.category_type = 'income'
-      GROUP BY c.category_id
-      ORDER BY amount DESC
-      LIMIT ?
-    )
-    UNION ALL
-    (
-      SELECT 
-        c.category_type AS type,
-        c.category_name AS name,
-        SUM(t.amount) AS amount
-      FROM \`transaction\` t
-      JOIN category c ON t.category_id = c.category_id
-      WHERE t.user_id = ? AND c.category_type = 'expense'
-      GROUP BY c.category_id
-      ORDER BY amount DESC
-      LIMIT ?
-    )
+    SELECT 
+      c.category_type AS type,
+      c.category_name AS name,
+      SUM(t.amount) AS amount
+    FROM \`transaction\` t
+    JOIN category c ON t.category_id = c.category_id
+    WHERE t.user_id = ? AND c.category_type = ? ${dateCondition}
+    GROUP BY c.category_id
+    ORDER BY amount DESC
+    LIMIT ${Number(limit)}
   `;
 
-    return await sqlQuery(sql, [userId, limit, userId, limit]);
+    return await sqlQuery(sql, params);
   },
 
   getMonthAmount: async ({ userId, startDate, endDate }) => {

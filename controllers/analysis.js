@@ -120,17 +120,19 @@ const analysisController = {
   getCategoryRank: async (req, res) => {
     try {
       const { id: userId } = req.body;
-      const { limit = 8 } = req.query;
-      const rows = await analysisServices.getCategoryRank({ userId, limit });
-      const result = { income: [], expense: [] };
-      for (const row of rows) {
-        const { type, name, amount } = row;
-        result[type].push({
-          name,
-          amount: Number(amount),
-          color: generateColor(name),
-        });
-      }
+      const { limit = 8, type, startDate, endDate } = req.query;
+      const rows = await analysisServices.getCategoryRank({
+        userId,
+        limit,
+        type,
+        startDate,
+        endDate,
+      });
+      const result = rows.map(({ name, amount }) => ({
+        name,
+        amount: Number(amount),
+        color: generateColor(name),
+      }));
 
       res.send({
         success: true,
@@ -146,14 +148,10 @@ const analysisController = {
 
   getMonthAmount: async (req, res) => {
     try {
-      const today = dayjs();
       const { id: userId } = req.body;
-      const { year = today.year(), month = today.month() + 1 } = req.query;
-      const targetMonth = dayjs(
-        `${year}-${month.toString().padStart(2, "0")}-01`
-      );
-      const startDate = targetMonth.startOf("month").format("YYYY-MM-DD");
-      const endDate = targetMonth.endOf("month").format("YYYY-MM-DD");
+      const { month } = req.query;
+      const startDate = dayjs(month).startOf("month").format("YYYY-MM-DD");
+      const endDate = dayjs(month).endOf("month").format("YYYY-MM-DD");
 
       const rows = await analysisServices.getMonthAmount({
         userId,
@@ -176,8 +174,8 @@ const analysisController = {
       });
 
       const result = [];
-      let cursor = targetMonth.startOf("month");
-      const lastDay = targetMonth.endOf("month");
+      let cursor = dayjs(month).startOf("month");
+      const lastDay = dayjs(month).endOf("month");
 
       while (cursor.isBefore(lastDay.add(1, "day"))) {
         const d = cursor.format("YYYY-MM-DD");
