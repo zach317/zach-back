@@ -24,7 +24,6 @@ const tagServices = {
       `SELECT tag_id FROM tag WHERE parent_id = ? AND user_id = ?`,
       [tagId, userId]
     );
-    console.log("🚀 ~ deleteTagRecursive: ~ children:", children);
 
     // 2. 递归删除子标签
     for (const child of children) {

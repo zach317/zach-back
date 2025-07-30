@@ -14,5 +14,6 @@ router.post("/login", userController.login);
 router.get("/get-userinfo", userController.getUserInfo);
 router.post('/update-userinfo', userController.updateUserInfo)
 
+router.get('/security-questions', userController.getSecurityQuestions);
 
 module.exports = router;

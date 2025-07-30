@@ -5,7 +5,6 @@ const dayjs = require("dayjs");
 const userController = {
   register: async (req, res) => {
     try {
-      // 在请求体中添加 create_at 字段，表示注册时间
       req.body.createAt = dayjs().format("YYYY-MM-DD HH:mm:ss");
       const data = await userServices.register(req.body);
       if (data) {
@@ -86,6 +85,15 @@ const userController = {
       if (data) {
         res.send({ success: true, message: "更新成功" });
       }
+    } catch (error) {
+      res.status(500).send({ success: false, message: error.message });
+    }
+  },
+
+  getSecurityQuestions: async (req, res) => {
+    try {
+      const data = await userServices.getSecurityQuestions();
+      res.send({ success: true, data });
     } catch (error) {
       res.status(500).send({ success: false, message: error.message });
     }

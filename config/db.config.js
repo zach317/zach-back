@@ -38,5 +38,3 @@ function dbConfig() {
 
 global.sqlQuery = sqlQuery;
 global.withTransaction = withTransaction;
-
-module.exports = { sqlQuery, withTransaction };
