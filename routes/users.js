@@ -12,8 +12,14 @@ router.post("/register", userController.register);
 router.post("/check-username", userController.checkUsername);
 router.post("/login", userController.login);
 router.get("/get-userinfo", userController.getUserInfo);
-router.post('/update-userinfo', userController.updateUserInfo)
+router.post("/update-userinfo", userController.updateUserInfo);
 
-router.get('/security-questions', userController.getSecurityQuestions);
-
+router.get("/security-questions", userController.getSecurityQuestions);
+router.get(
+  "/get-user-security-question",
+  userController.getUserSecurityQuestion
+);
+router.post("/verify-security-question", userController.verifySecurityQuestion);
+router.post("/verify-simple-question", userController.verifySimpleQuestion);
+router.post("/verify-custom-question", userController.verifyCustomQuestion);
 module.exports = router;

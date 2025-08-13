@@ -76,6 +76,49 @@ const userServices = {
       "SELECT * FROM security_questions WHERE is_active = 1 ORDER BY id"
     );
   },
+
+  // 获取用户安全问题
+  getUserSecurityQuestion: async (userId) => {
+    const rows = await sqlQuery(
+      `SELECT q.question
+     FROM user u
+     JOIN security_questions q ON u.security_question_id = q.id
+     WHERE u.id = ?`,
+      [userId]
+    );
+    return rows[0] || null;
+  },
+
+  // 验证简单问题的答案
+  verifySimpleQuestion: async ({ userId, type, answer }) => {
+    const column = type === "number" ? "security_number" : "security_letter";
+    const rows = await sqlQuery(
+      `SELECT ${column} AS val FROM user WHERE id = ?`,
+      [userId]
+    );
+    if (!rows.length) return false;
+    return String(rows[0].val) === String(answer);
+  },
+
+  verifySecurityQuestion: async ({ userId, answer }) => {
+    const rows = await sqlQuery(
+      `SELECT security_answer FROM user WHERE id = ?`,
+      [userId]
+    );
+    if (!rows.length) return false;
+    return rows[0].security_answer === answer;
+  },
+
+  verifyCustomQuestion: async ({ userId, question, answer }) => {
+    const rows = await sqlQuery(
+      `SELECT custom_question, custom_answer FROM user WHERE id = ?`,
+      [userId]
+    );
+    if (!rows.length) return false;
+    return (
+      rows[0].custom_question === question && rows[0].custom_answer === answer
+    );
+  },
 };
 
 module.exports = userServices;

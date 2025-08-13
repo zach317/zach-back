@@ -90,10 +90,67 @@ const userController = {
     }
   },
 
-  getSecurityQuestions: async (req, res) => {
+  getSecurityQuestions: async (_, res) => {
     try {
       const data = await userServices.getSecurityQuestions();
       res.send({ success: true, data });
+    } catch (error) {
+      res.status(500).send({ success: false, message: error.message });
+    }
+  },
+
+  getUserSecurityQuestion: async (req, res) => {
+    const { id: userId } = req.body;
+    try {
+      const data = await userServices.getUserSecurityQuestion(userId);
+      res.send({ success: true, data });
+    } catch (error) {
+      res.status(500).send({ success: false, message: error.message });
+    }
+  },
+
+  verifySimpleQuestion: async (req, res) => {
+    const { id: userId, type, answer } = req.body;
+    try {
+      const data = await userServices.verifySimpleQuestion({
+        userId,
+        type,
+        answer,
+      });
+      res.send({
+        success: data,
+      });
+    } catch (error) {
+      res.status(500).send({ success: false, message: error.message });
+    }
+  },
+
+  verifySecurityQuestion: async (req, res) => {
+    const { id: userId, answer } = req.body;
+    try {
+      const data = await userServices.verifySecurityQuestion({
+        userId,
+        answer,
+      });
+      res.send({
+        success: data,
+      });
+    } catch (error) {
+      res.status(500).send({ success: false, message: error.message });
+    }
+  },
+
+  verifyCustomQuestion: async (req, res) => {
+    const { id: userId, question, answer } = req.body;
+    try {
+      const data = await userServices.verifyCustomQuestion({
+        userId,
+        question,
+        answer,
+      });
+      res.send({
+        success: data,
+      });
     } catch (error) {
       res.status(500).send({ success: false, message: error.message });
     }
