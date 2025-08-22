@@ -100,7 +100,7 @@ const userController = {
   },
 
   getUserSecurityQuestion: async (req, res) => {
-    const { id: userId } = req.body;
+    const userId = req.body.id || req.query.unAuthorizationId;
     try {
       const data = await userServices.getUserSecurityQuestion(userId);
       res.send({ success: true, data });
@@ -110,10 +110,10 @@ const userController = {
   },
 
   verifySimpleQuestion: async (req, res) => {
-    const { id: userId, type, answer } = req.body;
+    const { id: userId, type, answer, unAuthorizationId } = req.body;
     try {
       const data = await userServices.verifySimpleQuestion({
-        userId,
+        userId: userId || unAuthorizationId,
         type,
         answer,
       });
@@ -126,10 +126,10 @@ const userController = {
   },
 
   verifySecurityQuestion: async (req, res) => {
-    const { id: userId, answer } = req.body;
+    const { id: userId, answer, unAuthorizationId } = req.body;
     try {
       const data = await userServices.verifySecurityQuestion({
-        userId,
+        userId: userId || unAuthorizationId,
         answer,
       });
       res.send({
@@ -141,15 +141,32 @@ const userController = {
   },
 
   verifyCustomQuestion: async (req, res) => {
-    const { id: userId, question, answer } = req.body;
+    const { id: userId, question, answer, unAuthorizationId } = req.body;
     try {
       const data = await userServices.verifyCustomQuestion({
-        userId,
+        userId: userId || unAuthorizationId,
         question,
         answer,
       });
       res.send({
         success: data,
+      });
+    } catch (error) {
+      res.status(500).send({ success: false, message: error.message });
+    }
+  },
+
+  findUser: async (req, res) => {
+    try {
+      const data = await userServices.findUser(req.body.username);
+      if (!!data) {
+        res.send({
+          success: true,
+          data,
+        });
+      }
+      res.send({
+        success: false,
       });
     } catch (error) {
       res.status(500).send({ success: false, message: error.message });

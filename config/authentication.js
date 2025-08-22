@@ -4,10 +4,15 @@ const excludeUrl = [
   "/users/login",
   "/users/register",
   "/users/check-username",
-  "user/find-user",
+  "/users/find-user",
+  "/users/security-questions",
+  "/users/get-user-security-question",
+  "/users/verify-security-question",
+  "/users/verify-simple-question",
+  "/users/verify-custom-question",
 ];
 const authentication = (req, res, next) => {
-  if (excludeUrl.includes(req.url)) {
+  if (excludeUrl.includes(req.path)) {
     next();
     return;
   }

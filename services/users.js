@@ -119,6 +119,13 @@ const userServices = {
       rows[0].custom_question === question && rows[0].custom_answer === answer
     );
   },
+
+  findUser: async (username) => {
+    const rows = await sqlQuery(`SELECT id FROM user WHERE username = ? limit 1`, [
+      username,
+    ]);
+    return rows[0];
+  },
 };
 
 module.exports = userServices;

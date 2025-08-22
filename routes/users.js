@@ -22,4 +22,5 @@ router.get(
 router.post("/verify-security-question", userController.verifySecurityQuestion);
 router.post("/verify-simple-question", userController.verifySimpleQuestion);
 router.post("/verify-custom-question", userController.verifyCustomQuestion);
+router.post("/find-user", userController.findUser);
 module.exports = router;
